@@ -1,0 +1,22 @@
+@import "tailwindcss";
+
+/* Add brand tokens here (right after the import) */
+@theme {
+  --color-brand-light: #B3C8D9;
+  --color-brand-dark:  #00528C;
+  --color-brand-dark-600: #004374;
+}
+
+/* You can add any global styles after that */
+body {
+  @apply bg-brand-light font-sans;
+}
+
+/* Optional custom animation for fade-in */
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in {
+  animation: fade-in 0.3s ease-in;
+}
