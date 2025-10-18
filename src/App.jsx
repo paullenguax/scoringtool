@@ -454,12 +454,14 @@ export default function App() {
             className="absolute top-3 right-3 sm:top-4 sm:right-4 w-12 h-12 sm:w-16 sm:h-16 object-contain"
           />
 
-          <h2 className="text-2xl sm:text-3xl font-bold text-center mb-2 text-brand-dark pr-16">
-            ICAO Score Submission
-          </h2>
-          <p className="text-sm sm:text-base text-gray-600 text-center mb-4 sm:mb-6">
-            Rate each criterion from 1 (Pre-elementary) to 6 (Expert)
-          </p>
+          <div className="relative pr-20">
+  <h2 className="text-2xl font-bold text-center mb-2 text-brand-dark">
+    Rater Course Scoring Tool
+  </h2>
+  <p className="text-sm text-gray-600 text-center mb-6">
+    Rate all 4 candidates (A, B, C, D) on each criterion from 1–6
+  </p>
+</div>
 
           <input
             placeholder="Candidate ID (optional)"
@@ -477,63 +479,100 @@ export default function App() {
 
           <div className="space-y-4 sm:space-y-6 mb-4 sm:mb-6">
             {labels.map((label, i) => (
-              <div key={i} className={`border-2 rounded-lg p-3 sm:p-4 transition-all ${
-                showErrors && !touched[i] 
-                  ? 'border-red-400 bg-red-50' 
-                  : 'border-gray-200 hover:bg-gray-50'
-              }`}>
-                <div className="flex items-center justify-between mb-2 sm:mb-3">
-                  <div className="flex items-center">
-                    <label className="text-sm sm:text-base text-gray-700 font-medium">{label}</label>
-                    {touched[i] && scores[i] !== null && (
-                      <Tooltip label={label} level={scores[i]} />
-                    )}
-                  </div>
-                  <div className={`text-xl sm:text-2xl font-bold ${
-                    !touched[i] ? 'text-gray-300' :
-                    scores[i] <= 3 ? 'text-red-600' :
-                    'text-green-600'
-                  }`}>
-                    {touched[i] && scores[i] !== null ? scores[i] : '—'}
-                  </div>
-                </div>
-                <input
-                  type="range"
-                  min="1"
-                  max="6"
-                  value={scores[i] || 4}
-                  onChange={(e) => {
-                    const newScores = [...scores];
-                    newScores[i] = parseInt(e.target.value);
-                    setScores(newScores);
-                    
-                    const newTouched = [...touched];
-                    newTouched[i] = true;
-                    setTouched(newTouched);
-                  }}
-                  className={`w-full h-2 rounded-lg appearance-none cursor-pointer ${
-                    touched[i] ? 'opacity-100' : 'opacity-40'
-                  }`}
-                  style={{
-                    background: touched[i] ? '#d1d5db' : '#e5e7eb'
-                  }}
-                />
-                <div className="flex justify-between text-[10px] sm:text-xs text-gray-500 mt-1">
-                  <span>Pre-elem</span>
-                  <span className="hidden sm:inline">Elementary</span>
-                  <span className="sm:hidden">Elem</span>
-                  <span className="hidden sm:inline">Pre-op</span>
-                  <span className="sm:hidden">P-op</span>
-                  <span className="hidden sm:inline">Operational</span>
-                  <span className="sm:hidden">Oper</span>
-                  <span className="hidden sm:inline">Extended</span>
-                  <span className="sm:hidden">Ext</span>
-                  <span>Expert</span>
-                </div>
-                {showErrors && !touched[i] && (
-                  <p className="text-red-600 text-xs sm:text-sm mt-2">⚠ Please rate this criterion</p>
-                )}
-              </div>
+<div
+  key={i}
+  className={`border-2 rounded-lg p-3 sm:p-4 pb-6 sm:pb-7 transition-all ${
+    showErrors && !touched[i]
+      ? "border-red-400 bg-red-50"
+      : "border-gray-200 hover:bg-gray-50"
+  }`}
+>
+
+  <div className="flex items-center justify-between mb-2 sm:mb-3">
+    <div className="flex items-center">
+      <label className="text-sm sm:text-base text-gray-700 font-medium">
+        {label}
+      </label>
+      {touched[i] && scores[i] !== null && (
+        <Tooltip label={label} level={scores[i]} />
+      )}
+    </div>
+
+    <div
+      className={`text-xl sm:text-2xl font-bold ${
+        !touched[i]
+          ? "text-gray-300"
+          : scores[i] <= 3
+          ? "text-red-600"
+          : "text-green-600"
+      }`}
+    >
+      {touched[i] && scores[i] !== null ? scores[i] : "—"}
+    </div>
+  </div>
+
+  {/* Slider + Number input */}
+  <div className="relative">
+    <div className="grid grid-cols-[1fr_auto] items-center gap-3">
+      <input
+        type="range"
+        min="1"
+        max="6"
+        value={scores[i] || 4}
+        onChange={(e) => {
+          const newScores = [...scores];
+          newScores[i] = parseInt(e.target.value);
+          setScores(newScores);
+
+          const newTouched = [...touched];
+          newTouched[i] = true;
+          setTouched(newTouched);
+        }}
+        className="w-full h-2 rounded-lg cursor-pointer accent-blue-600"
+      />
+
+      <input
+        type="number"
+        min="1"
+        max="6"
+        value={scores[i] || ""}
+        onChange={(e) => {
+          const val = Math.min(6, Math.max(1, parseInt(e.target.value) || 1));
+          const newScores = [...scores];
+          newScores[i] = val;
+          setScores(newScores);
+
+          const newTouched = [...touched];
+          newTouched[i] = true;
+          setTouched(newTouched);
+        }}
+        className="w-14 text-center border border-gray-300 rounded-md p-1 focus:ring-2 focus:ring-brand-dark"
+      />
+    </div>
+
+    {/* Scale labels */}
+    <div className="absolute left-0 right-[3.5rem] flex justify-between text-[10px] sm:text-xs text-gray-500 mt-1">
+      <span>Pre-elem</span>
+      <span className="hidden sm:inline">Elementary</span>
+      <span className="sm:hidden">Elem</span>
+      <span className="hidden sm:inline">Pre-op</span>
+      <span className="sm:hidden">P-op</span>
+      <span className="hidden sm:inline">Operational</span>
+      <span className="sm:hidden">Oper</span>
+      <span className="hidden sm:inline">Extended</span>
+      <span className="sm:hidden">Ext</span>
+      <span>Expert</span>
+    </div>
+  </div>
+
+  {/* Validation message */}
+  {showErrors && !touched[i] && (
+    <p className="text-red-600 text-xs sm:text-sm mt-5">
+      ⚠ Please rate this criterion
+    </p>
+  )}
+</div>
+
             ))}
           </div>
 
