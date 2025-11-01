@@ -133,17 +133,33 @@ const ScoreDistribution = ({ entries, criteriaIndex, label }) => {
   return (
     <div className="mt-2">
       <div className="text-xs font-medium text-gray-600 mb-1">{label}</div>
-      <div className="flex gap-1 items-end h-12">
+      <div className="flex gap-1 items-end h-16 relative">
         {distribution.map((count, i) => (
-          <div key={i} className="flex-1 flex flex-col items-center">
-            <div 
-              className={`w-full ${getBarColor(i + 1)} rounded-t transition-all duration-300`}
-              style={{ height: `${(count / max) * 100}%` }}
-            ></div>
-            <div className="text-xs text-gray-500 mt-1">{i + 1}</div>
+          <div key={i} className="flex-1 flex flex-col items-center justify-end h-full relative">
+            {/* Count above the bar */}
             {count > 0 && (
-              <div className="text-xs text-gray-400">{count}</div>
+              <div className="absolute top-0 text-xs font-bold text-gray-700">
+                {count}
+              </div>
             )}
+            {/* Bar */}
+            <div 
+              className={`w-full ${getBarColor(i + 1)} rounded-t transition-all duration-300 flex items-center justify-center`}
+              style={{ height: `${(count / max) * 75}%` }}
+            >
+              {/* Count inside bar if tall enough */}
+              {count > 0 && (count / max) > 0.3 && (
+                <span className="text-xs font-bold text-white opacity-90">{count}</span>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+      {/* Level labels clearly separated below */}
+      <div className="flex gap-1 mt-1 border-t border-gray-200 pt-1">
+        {[1, 2, 3, 4, 5, 6].map(level => (
+          <div key={level} className="flex-1 text-center">
+            <div className="text-xs font-semibold text-gray-600">L{level}</div>
           </div>
         ))}
       </div>
@@ -161,17 +177,22 @@ const MobileScoreCard = ({ entry, index, isTrainer, showNames, onDelete }) => {
       <div className="flex justify-between items-start mb-3">
         <div>
           {isTrainer && showNames && entry.candidateId && (
-  <div className="text-sm font-medium text-gray-700">
-    Candidate: {entry.candidateId}
-  </div>
-)}
-
-          {isTrainer && (
-            <div className="text-xs text-gray-500">
-              {showNames ? entry.raterName : `User ${index + 1}`}
+            <div className="text-sm font-medium text-gray-700">
+              Candidate: {entry.candidateId}
             </div>
           )}
-          {isTrainer && (
+
+          {isTrainer && showNames && (
+            <div className="text-xs text-gray-500">
+              {entry.raterName}
+            </div>
+          )}
+          {isTrainer && !showNames && (
+            <div className="text-xs text-gray-500">
+              User {index + 1}
+            </div>
+          )}
+          {isTrainer && showNames && (
             <div className="text-xs text-gray-400 mt-1">
               {new Date(entry.timestamp).toLocaleString()}
             </div>
@@ -296,22 +317,19 @@ export default function App() {
     }
   };
 
-
-
   const handleBulkDelete = async () => {
-  if (selectedIds.length === 0) {
-    alert("No entries selected.");
-    return;
-  }
+    if (selectedIds.length === 0) {
+      alert("No entries selected.");
+      return;
+    }
 
-  if (window.confirm(`Delete ${selectedIds.length} selected entries?`)) {
-    const deletions = selectedIds.map(id => deleteDoc(doc(db, "scores", id)));
-    await Promise.all(deletions);
-    setSelectedIds([]);
-    setSelectAll(false);
-  }
-};
-
+    if (window.confirm(`Delete ${selectedIds.length} selected entries?`)) {
+      const deletions = selectedIds.map(id => deleteDoc(doc(db, "scores", id)));
+      await Promise.all(deletions);
+      setSelectedIds([]);
+      setSelectAll(false);
+    }
+  };
 
   const handleClearLocal = () => {
     if (
@@ -422,27 +440,25 @@ export default function App() {
             Download CSV
           </button>
           <button
-  onClick={() => {
-    if (!selectAll) {
-      setSelectedIds(entries.map(e => e.id));
-    } else {
-      setSelectedIds([]);
-    }
-    setSelectAll(!selectAll);
-  }}
-  className="px-3 sm:px-4 py-2 bg-white rounded-lg hover:bg-gray-50 text-xs sm:text-sm text-brand-dark font-medium shadow-sm"
->
-  {selectAll ? "Deselect All" : "Select All"}
-</button>
+            onClick={() => {
+              if (!selectAll) {
+                setSelectedIds(entries.map(e => e.id));
+              } else {
+                setSelectedIds([]);
+              }
+              setSelectAll(!selectAll);
+            }}
+            className="px-3 sm:px-4 py-2 bg-white rounded-lg hover:bg-gray-50 text-xs sm:text-sm text-brand-dark font-medium shadow-sm"
+          >
+            {selectAll ? "Deselect All" : "Select All"}
+          </button>
 
-<button
-  onClick={handleBulkDelete}
-  className="px-3 sm:px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 text-xs sm:text-sm font-medium shadow-sm"
->
-  Delete Selected
-</button>
-
-
+          <button
+            onClick={handleBulkDelete}
+            className="px-3 sm:px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 text-xs sm:text-sm font-medium shadow-sm"
+          >
+            Delete Selected
+          </button>
         </div>
       )}
 
@@ -455,13 +471,13 @@ export default function App() {
           />
 
           <div className="relative pr-20">
-  <h2 className="text-2xl font-bold text-center mb-2 text-brand-dark">
-    Rater Course Scoring Tool
-  </h2>
-  <p className="text-sm text-gray-600 text-center mb-6">
-    Rate all 4 candidates (A, B, C, D) on each criterion from 1–6
-  </p>
-</div>
+            <h2 className="text-2xl font-bold text-center mb-2 text-brand-dark">
+              Rater Course Scoring Tool
+            </h2>
+            <p className="text-sm text-gray-600 text-center mb-6">
+              Rate each candidate on all 6 criteria from 1–6
+            </p>
+          </div>
 
           <input
             placeholder="Candidate ID (optional)"
@@ -479,100 +495,98 @@ export default function App() {
 
           <div className="space-y-4 sm:space-y-6 mb-4 sm:mb-6">
             {labels.map((label, i) => (
-<div
-  key={i}
-  className={`border-2 rounded-lg p-3 sm:p-4 pb-6 sm:pb-7 transition-all ${
-    showErrors && !touched[i]
-      ? "border-red-400 bg-red-50"
-      : "border-gray-200 hover:bg-gray-50"
-  }`}
->
+              <div
+                key={i}
+                className={`border-2 rounded-lg p-3 sm:p-4 pb-6 sm:pb-7 transition-all ${
+                  showErrors && !touched[i]
+                    ? "border-red-400 bg-red-50"
+                    : "border-gray-200 hover:bg-gray-50"
+                }`}
+              >
+                <div className="flex items-center justify-between mb-2 sm:mb-3">
+                  <div className="flex items-center">
+                    <label className="text-sm sm:text-base text-gray-700 font-medium">
+                      {label}
+                    </label>
+                    {touched[i] && scores[i] !== null && (
+                      <Tooltip label={label} level={scores[i]} />
+                    )}
+                  </div>
 
-  <div className="flex items-center justify-between mb-2 sm:mb-3">
-    <div className="flex items-center">
-      <label className="text-sm sm:text-base text-gray-700 font-medium">
-        {label}
-      </label>
-      {touched[i] && scores[i] !== null && (
-        <Tooltip label={label} level={scores[i]} />
-      )}
-    </div>
+                  <div
+                    className={`text-xl sm:text-2xl font-bold ${
+                      !touched[i]
+                        ? "text-gray-300"
+                        : scores[i] <= 3
+                        ? "text-red-600"
+                        : "text-green-600"
+                    }`}
+                  >
+                    {touched[i] && scores[i] !== null ? scores[i] : "—"}
+                  </div>
+                </div>
 
-    <div
-      className={`text-xl sm:text-2xl font-bold ${
-        !touched[i]
-          ? "text-gray-300"
-          : scores[i] <= 3
-          ? "text-red-600"
-          : "text-green-600"
-      }`}
-    >
-      {touched[i] && scores[i] !== null ? scores[i] : "—"}
-    </div>
-  </div>
+                {/* Slider + Number input */}
+                <div className="relative">
+                  <div className="grid grid-cols-[1fr_auto] items-center gap-3">
+                    <input
+                      type="range"
+                      min="1"
+                      max="6"
+                      value={scores[i] || 4}
+                      onChange={(e) => {
+                        const newScores = [...scores];
+                        newScores[i] = parseInt(e.target.value);
+                        setScores(newScores);
 
-  {/* Slider + Number input */}
-  <div className="relative">
-    <div className="grid grid-cols-[1fr_auto] items-center gap-3">
-      <input
-        type="range"
-        min="1"
-        max="6"
-        value={scores[i] || 4}
-        onChange={(e) => {
-          const newScores = [...scores];
-          newScores[i] = parseInt(e.target.value);
-          setScores(newScores);
+                        const newTouched = [...touched];
+                        newTouched[i] = true;
+                        setTouched(newTouched);
+                      }}
+                      className="w-full h-2 rounded-lg cursor-pointer accent-blue-600"
+                    />
 
-          const newTouched = [...touched];
-          newTouched[i] = true;
-          setTouched(newTouched);
-        }}
-        className="w-full h-2 rounded-lg cursor-pointer accent-blue-600"
-      />
+                    <input
+                      type="number"
+                      min="1"
+                      max="6"
+                      value={scores[i] || ""}
+                      onChange={(e) => {
+                        const val = Math.min(6, Math.max(1, parseInt(e.target.value) || 1));
+                        const newScores = [...scores];
+                        newScores[i] = val;
+                        setScores(newScores);
 
-      <input
-        type="number"
-        min="1"
-        max="6"
-        value={scores[i] || ""}
-        onChange={(e) => {
-          const val = Math.min(6, Math.max(1, parseInt(e.target.value) || 1));
-          const newScores = [...scores];
-          newScores[i] = val;
-          setScores(newScores);
+                        const newTouched = [...touched];
+                        newTouched[i] = true;
+                        setTouched(newTouched);
+                      }}
+                      className="w-14 text-center border border-gray-300 rounded-md p-1 focus:ring-2 focus:ring-brand-dark"
+                    />
+                  </div>
 
-          const newTouched = [...touched];
-          newTouched[i] = true;
-          setTouched(newTouched);
-        }}
-        className="w-14 text-center border border-gray-300 rounded-md p-1 focus:ring-2 focus:ring-brand-dark"
-      />
-    </div>
+                  {/* Scale labels */}
+                  <div className="absolute left-0 right-[3.5rem] flex justify-between text-[10px] sm:text-xs text-gray-500 mt-1">
+                    <span>Pre-elem</span>
+                    <span className="hidden sm:inline">Elementary</span>
+                    <span className="sm:hidden">Elem</span>
+                    <span className="hidden sm:inline">Pre-op</span>
+                    <span className="sm:hidden">P-op</span>
+                    <span className="hidden sm:inline">Operational</span>
+                    <span className="sm:hidden">Oper</span>
+                    <span className="hidden sm:inline">Extended</span>
+                    <span className="sm:hidden">Ext</span>
+                    <span>Expert</span>
+                  </div>
+                </div>
 
-    {/* Scale labels */}
-    <div className="absolute left-0 right-[3.5rem] flex justify-between text-[10px] sm:text-xs text-gray-500 mt-1">
-      <span>Pre-elem</span>
-      <span className="hidden sm:inline">Elementary</span>
-      <span className="sm:hidden">Elem</span>
-      <span className="hidden sm:inline">Pre-op</span>
-      <span className="sm:hidden">P-op</span>
-      <span className="hidden sm:inline">Operational</span>
-      <span className="sm:hidden">Oper</span>
-      <span className="hidden sm:inline">Extended</span>
-      <span className="sm:hidden">Ext</span>
-      <span>Expert</span>
-    </div>
-  </div>
-
-  {/* Validation message */}
-  {showErrors && !touched[i] && (
-    <p className="text-red-600 text-xs sm:text-sm mt-5">
-      ⚠ Please rate this criterion
-    </p>
-  )}
-</div>
-
+                {/* Validation message */}
+                {showErrors && !touched[i] && (
+                  <p className="text-red-600 text-xs sm:text-sm mt-5">
+                    ⚠ Please rate this criterion
+                  </p>
+                )}
+              </div>
             ))}
           </div>
 
@@ -658,27 +672,27 @@ export default function App() {
                 <thead>
                   <tr className="bg-gray-100 text-gray-700 text-left text-sm">
                     {isTrainer && (
-  <th className="p-3 border-b text-center">
-    <input
-      type="checkbox"
-      checked={selectAll}
-      onChange={() => {
-        if (!selectAll) {
-          setSelectedIds(entries.map((e) => e.id));
-        } else {
-          setSelectedIds([]);
-        }
-        setSelectAll(!selectAll);
-      }}
-    />
-  </th>
-)}
+                      <th className="p-3 border-b text-center">
+                        <input
+                          type="checkbox"
+                          checked={selectAll}
+                          onChange={() => {
+                            if (!selectAll) {
+                              setSelectedIds(entries.map((e) => e.id));
+                            } else {
+                              setSelectedIds([]);
+                            }
+                            setSelectAll(!selectAll);
+                          }}
+                        />
+                      </th>
+                    )}
 
-                    {isTrainer && <th className="p-3 border-b font-semibold">Time</th>}
+                    {isTrainer && showNames && <th className="p-3 border-b font-semibold">Time</th>}
                     {isTrainer && <th className="p-3 border-b font-semibold">Candidate</th>}
                     <th className="p-3 border-b font-semibold">Scores</th>
                     <th className="p-3 border-b font-semibold">Overall</th>
-                    {isTrainer && <th className="p-3 border-b font-semibold">Rater</th>}
+                    {isTrainer && showNames && <th className="p-3 border-b font-semibold">Rater</th>}
                     {isTrainer && <th className="p-3 border-b text-center font-semibold">Actions</th>}
                   </tr>
                 </thead>
@@ -687,44 +701,41 @@ export default function App() {
                     const overall = Math.min(...e.scores);
                     return (
                       <tr
-  key={e.id}
-  className={`${
-    selectedIds.includes(e.id)
-      ? "bg-blue-100"
-      : i % 2 === 0
-      ? "bg-white"
-      : "bg-gray-50"
-  } hover:bg-blue-50 transition-colors`}
->
-
-{isTrainer && (
-  <td className="p-3 border-b text-center">
-    <input
-      type="checkbox"
-      checked={selectedIds.includes(e.id)}
-      onChange={() => {
-        if (selectedIds.includes(e.id)) {
-          setSelectedIds(selectedIds.filter((id) => id !== e.id));
-        } else {
-          setSelectedIds([...selectedIds, e.id]);
-        }
-      }}
-    />
-  </td>
-)}
-
-
-
+                        key={e.id}
+                        className={`${
+                          selectedIds.includes(e.id)
+                            ? "bg-blue-100"
+                            : i % 2 === 0
+                            ? "bg-white"
+                            : "bg-gray-50"
+                        } hover:bg-blue-50 transition-colors`}
+                      >
                         {isTrainer && (
+                          <td className="p-3 border-b text-center">
+                            <input
+                              type="checkbox"
+                              checked={selectedIds.includes(e.id)}
+                              onChange={() => {
+                                if (selectedIds.includes(e.id)) {
+                                  setSelectedIds(selectedIds.filter((id) => id !== e.id));
+                                } else {
+                                  setSelectedIds([...selectedIds, e.id]);
+                                }
+                              }}
+                            />
+                          </td>
+                        )}
+
+                        {isTrainer && showNames && (
                           <td className="p-3 border-b text-xs text-gray-600">
                             {new Date(e.timestamp).toLocaleTimeString()}
                           </td>
                         )}
                         {isTrainer && (
-  <td className="p-3 border-b text-sm">
-    {showNames ? (e.candidateId || "—") : "—"}
-  </td>
-)}
+                          <td className="p-3 border-b text-sm">
+                            {showNames ? (e.candidateId || "—") : "—"}
+                          </td>
+                        )}
                         <td className="p-3 border-b">
                           <div className="flex gap-1">
                             {e.scores.map((score, idx) => (
@@ -754,9 +765,11 @@ export default function App() {
                         </td>
                         {isTrainer && (
                           <>
-                            <td className="p-3 border-b text-sm">
-                              {showNames ? e.raterName : `User ${i + 1}`}
-                            </td>
+                            {showNames && (
+                              <td className="p-3 border-b text-sm">
+                                {e.raterName}
+                              </td>
+                            )}
                             <td className="p-3 border-b text-center">
                               <button
                                 onClick={() => handleDelete(e.id)}
